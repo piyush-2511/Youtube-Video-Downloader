@@ -293,10 +293,13 @@
             const downloadBtn = document.getElementById('downloadBtn');
             const loading = document.getElementById('loading');
 
+            // Determine if this is an audio download
+            const isAudio = selectedFormat === 'bestaudio';
+
             try {
                 downloadBtn.disabled = true;
                 loading.style.display = 'block';
-                document.getElementById('loadingText').textContent = 'Downloading...';
+                document.getElementById('loadingText').textContent = `Downloading ${isAudio ? 'audio' : 'video'}...`;
                 document.getElementById('downloadLink').style.display = 'none';
 
                 const response = await fetch('/download', {
@@ -304,19 +307,21 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         url: videoUrl,
-                        format_id: selectedFormat
+                        format_id: selectedFormat,
+                        type: isAudio ? 'audio' : 'video'
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    showStatus('Download completed successfully!', 'success');
+                    showStatus(`${isAudio ? 'Audio' : 'Video'} downloaded successfully!`, 'success');
+                    const extension = isAudio ? 'mp3' : 'mp4';
                     document.getElementById('downloadLink').innerHTML = `
-                        <a href="/get-video/${data.filename}" download="${data.title}.mp4">
-                            Download Now
-                        </a>
-                    `;
+                <a href="/get-video/${data.filename}" download="${data.title}.${extension}">
+                    Download Now
+                </a>
+            `;
                     document.getElementById('downloadLink').style.display = 'block';
                 } else {
                     throw new Error(data.message);
@@ -328,27 +333,7 @@
                 loading.style.display = 'none';
             }
         }
-
-        async function handleDownload() {
-            const videoUrl = document.getElementById('video-url').value;
-            const formatId = document.querySelector('input[name="format"]:checked').value;
-
-            // Request to download the video
-            const response = await fetch('/download', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: videoUrl, format_id: formatId })
-            });
-
-            const data = await response.json();
-            if (data.success) {
-                // Redirect to the download URL
-                window.location.href = data.download_url;
-            } else {
-                alert(`Error: ${data.message}`);
-            }
-        }
-
+        
 
 
         function showStatus(message, type) {
