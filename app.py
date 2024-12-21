@@ -19,6 +19,67 @@ downloaded_files = {}
 def index():
     return render_template('index.html')
 
+# @app.route('/get-formats', methods=['POST'])
+# def get_formats():
+#     try:
+#         video_url = request.json['url']
+        
+#         # Configure yt-dlp options for format extraction
+#         ydl_opts = {
+#             'quiet': True,
+#             'no_warnings': True
+#         }
+        
+#         # Extract video information and available formats
+#         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+#             info = ydl.extract_info(video_url, download=False)
+            
+#             formats = []
+#             # Add MP3 option first
+#             formats.append({
+#                 'format_id': 'bestaudio',
+#                 'ext': 'mp3',
+#                 'type': 'audio',
+#                 'quality': '192',
+#                 'filesize': 'N/A',
+#                 'display': 'Audio: MP3 (192kbps)'
+#             })
+            
+#             for fmt in info.get('formats', []):
+#                 if fmt.get('ext'):
+#                     size = fmt.get('filesize') or fmt.get('filesize_approx') or 0
+#                     size_mb = size / (1024 * 1024)
+                    
+#                     format_info = {
+#                         'format_id': fmt['format_id'],
+#                         'ext': fmt['ext'],
+#                         'filesize': f"{size_mb:.1f} MB",
+#                         'format_note': fmt.get('format_note', ''),
+#                     }
+                    
+#                     if fmt.get('height'):  # Video formats
+#                         format_info['type'] = 'video'
+#                         format_info['quality'] = f"{fmt['height']}p"
+#                         format_info['display'] = f"Video: {fmt['height']}p {fmt['ext']} ({size_mb:.1f} MB)"
+#                         formats.append(format_info)
+            
+#             # Sort formats by quality (height for video)
+#             formats.sort(key=lambda x: int(x.get('quality', '0').replace('p', '')) if x['type'] == 'video' else 0, 
+#                         reverse=True)
+            
+#             return jsonify({
+#                 'success': True,
+#                 'title': info.get('title', 'Unknown'),
+#                 'duration': info.get('duration', 0),
+#                 'formats': formats
+#             })
+            
+#     except Exception as e:
+#         return jsonify({
+#             'success': False,
+#             'message': str(e)
+#         })
+
 @app.route('/get-formats', methods=['POST'])
 def get_formats():
     try:
@@ -49,6 +110,10 @@ def get_formats():
                 if fmt.get('ext'):
                     size = fmt.get('filesize') or fmt.get('filesize_approx') or 0
                     size_mb = size / (1024 * 1024)
+                    
+                    # Skip formats with 0.0 MB size
+                    if size_mb == 0:
+                        continue
                     
                     format_info = {
                         'format_id': fmt['format_id'],
