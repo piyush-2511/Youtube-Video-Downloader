@@ -89,14 +89,25 @@ def download():
     try:
         video_url = request.json['url']
         format_id = request.json.get('format_id', 'best')
-        download_type = request.json.get('type', 'video')  # New parameter to specify download type
+        download_type = request.json.get('type', 'video')
         
-        # Create a unique filename using timestamp
+        # First get the video info to get the title
+        ydl_opts_info = {
+            'quiet': True,
+            'no_warnings': True
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts_info) as ydl:
+            info = ydl.extract_info(video_url, download=False)
+            title = info.get('title', 'Unknown')
+            
+        # Clean the title to make it filesystem safe
+        safe_title = "".join(x for x in title if x.isalnum() or x in (' ', '-', '_')).rstrip()
+        
+        # Create a unique filename using title and timestamp
         timestamp = int(time.time())
-        
-        # Set filename extension based on download type
         extension = 'mp3' if download_type == 'audio' else 'mp4'
-        filename = f'download_{timestamp}.{extension}'
+        filename = f'{safe_title}_{timestamp}.{extension}'
         output_path = os.path.join(TEMP_FOLDER, filename)
         
         # Configure yt-dlp options based on download type
@@ -121,8 +132,7 @@ def download():
         
         # Download the video/audio
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(video_url, download=True)
-            title = info['title']
+            ydl.download([video_url])
         
         # For audio downloads, adjust the file path to include .mp3 extension
         if download_type == 'audio':
@@ -132,14 +142,15 @@ def download():
         downloaded_files[filename] = {
             'path': output_path,
             'downloaded': False,
-            'timestamp': time.time()
+            'timestamp': time.time(),
+            'title': safe_title
         }
         
         return jsonify({
             'success': True,
             'message': f"{'Audio' if download_type == 'audio' else 'Video'} downloaded successfully",
             'filename': filename,
-            'title': title
+            'title': safe_title
         })
         
     except Exception as e:
@@ -147,7 +158,6 @@ def download():
             'success': False,
             'message': str(e)
         })
-
 @app.route('/get-video/<filename>')
 def get_video(filename):
     try:
@@ -157,6 +167,11 @@ def get_video(filename):
         file_path = downloaded_files[filename]['path']
         if not os.path.exists(file_path):
             return "File not found", 404
+
+        # Get the original title and extension
+        title = downloaded_files[filename].get('title', 'download')
+        extension = '.mp3' if filename.endswith('.mp3') else '.mp4'
+        download_name = f"{title}{extension}"
 
         def cleanup():
             try:
@@ -175,7 +190,7 @@ def get_video(filename):
         return send_file(
             file_path,
             as_attachment=True,
-            download_name=filename
+            download_name=download_name
         )
 
     except Exception as e:
