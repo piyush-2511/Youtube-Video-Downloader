@@ -30,8 +30,8 @@ Make sure you have the following installed on your system:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/video-downloader.git
-   cd video-downloader
+   git clone https://github.com/your-username/Youtube-Video-Downloader.git
+   cd Youtube-Video-Downloader
    ```
 
 2. Install required Python packages:
