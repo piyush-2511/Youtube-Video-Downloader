@@ -81,10 +81,6 @@ project-directory/
    ```
 5. Create a Pull Request.
 
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for more details.
-
 ## Acknowledgements
 
 - Thanks to the creators of the libraries and tools used in this project.
